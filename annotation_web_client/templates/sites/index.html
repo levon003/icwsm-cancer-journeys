@@ -1,0 +1,56 @@
+{% extends 'template.html' %}
+
+{% block title %}Index{% endblock %}
+
+{% block leftbar %}
+  <h2>Search Options:</h2>
+
+<form method="post">
+
+  <!-- Sort By -->
+  <label for="sortBy">Sort By:</label>
+  <input name="sortBy" id="sortBy" list="sortByCols" value="{{ request.args.get('sortBy','') }}">
+  <datalist id="sortByCols">
+  {% for column in site_columns %}
+    <option value="{{ column }}">
+  {% endfor %}
+  </datalist>
+  <br>
+
+  <!-- Sort Order -->
+  {% if request.args.get('sortOrder','ascending') == 'ascending' %}
+     <input type="checkbox" name="sortOrder" value="ascending" checked="checked">Sort Ascending
+  {% else %}
+       <input type="checkbox" name="sortOrder" value="ascending">Sort Ascending
+  {% endif %}
+  <br>
+
+  <!-- Filter -->
+  <label for="query">Query:</label>
+  <input name="query" id="query" value="{{ request.args.get('query','') }}">
+  <br>
+  <p>Try: '(col) not in @invalid', '(col) == @nan', 'updatedAt - createdAt > 2 * @oneYear', 'createdAt > @year2010'</p>
+  <!-- Search Button -->
+  <input type="submit" value="Search">
+</form>
+{% endblock %}
+
+{% block content %}
+<p>View and annotate sites.</p>
+
+  <h2>CaringBridge Sites:</h2>
+
+<p>{{ total_site_count }} sites found.
+{% if total_site_count > 50 %}
+     First 50 sites shown.
+{% endif %}
+</p>
+
+  <ul>
+  {% for site in sites %}
+    <li><a href="{{ url_for('sites.view_site', site_id=site['_id']) }}">
+      <b>{{ site['_id'] }}</b> -- {{ site['title'] }}
+    </a></li>
+  {% endfor %}
+  </ul>
+{% endblock %}

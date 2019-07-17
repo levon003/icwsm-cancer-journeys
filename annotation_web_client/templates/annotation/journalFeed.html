@@ -1,0 +1,27 @@
+{% extends 'template.html' %}
+
+{% block title %}Annotation Summary{% endblock %}
+
+{% block leftbar %}
+<h3>Journal annotations feed:</h3>
+
+  <p>
+      Displaying {{journal_annotations|length}} most recent entries.
+  </p>
+
+{% endblock %}
+
+{% block content %}
+
+<h3>Recent journal annotations:</h3>
+
+<ul>
+  {% for journal_annotation in journal_annotations %}
+  <li>
+    <b>{{ journal_annotation['date_repr'] }}:</b> {{ journal_annotation['id'] }}-- User: {{ journal_annotation['username'] }} --
+      {{ journal_annotation['annotation_type'] }} -- <a href="{{ url_for('sites.view_site', site_id=journal_annotation['site_id']) }}#{{journal_annotation['journal_oid']}}">
+      Site {{ journal_annotation['site_id'] }}</a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,11 @@
+#!/bin/bash
+# This script starts the annotation web client.
+# Takes 1 optional parameter: the port
+
+port=${1:-5000}
+
+echo "Changing directory and attempting to start the server."
+cd /home/srivbane/shared/caringbridge/data/projects/qual-health-journeys
+source ./annotation_web_client/run_flask_server.sh ${port}
+echo "Finished."
+

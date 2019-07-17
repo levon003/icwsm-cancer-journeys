@@ -1,0 +1,405 @@
+{% extends 'template.html' %}
+
+{% block title %}Site {{ site['_id'] }} {% endblock %}
+
+{% block leftbar %}
+  <h3>Site Metadata:</h3>
+
+  <ul>
+    <li><b>Site Id:</b> {{ site['_id'] }}</li>
+    <li><b>Title:</b> {{ site['title'] }}</li>
+    <li><b>Health Condition:</b> {{ site['healthCondition_repr'] }}</li>
+    <li><b>Privacy:</b> {{ site['privacy'] }}</li>
+    <li><b>Created:</b> {{ site['createdAt_repr'] }}</li>
+    <li><b>Updated:</b> {{ site['updatedAt_repr'] }}</li>
+    <li><b>Visits:</b> {{ site['visits']|int }}</li>
+  </ul>
+{% endblock %}
+
+{% block content %}
+<h2>Site {{ site['_id'] }}</h2>
+
+<h3>Title: {{ site['title'] }}</h3>
+
+  <ul>
+    <li><b>Health Condition:</b> {{ site['healthCondition_repr'] }}</li>
+    <li><b>Privacy:</b> {{ site['privacy'] }}</li>
+    <li><b>Created:</b> {{ site['createdAt_repr'] }}</li>
+    <li><b>Updated:</b> {{ site['updatedAt_repr'] }}</li>
+    <li><b>Visits:</b> {{ site['visits']|int }}</li>
+  </ul>
+
+<h3>Description:</h3>
+
+<p>{{ site['description']|safe }}</p>
+
+
+<h3>Journals:</h3>
+
+<h5>Total: {{ site['journal_count'] }}</h5>
+
+{% if phase_conflict_list|length > 0 %}
+<div id="phase_conflict_list">
+<h4>Journey Phase Annotation Conflicts:</h4>
+<a href="{{url_for('conflict.view_journal_phase_conflicts', user1=user1, user2=user2)}}">Back to all user conflicts.</a>
+<table style="width:50%" rules="cols" cellpadding="2">
+  <tr>
+    <th>Link</th>
+    <th>Journal Num</th>
+    <th>Resolved?</th>
+    <th>In Common</th>
+    <th>{{user1}} Only</th>
+    <th>{{user2}} Only</th>
+  </tr>
+  {% for conflict in phase_conflict_list %}
+  <tr>
+  <td><a href="#{{conflict['journal_oid']}}">
+    Conflict {{loop.index}}</a></td>
+    <td>{{conflict['journal_index'] + 1}}</td>
+    <td><input type="checkbox" onclick="return false;" {{'checked' if conflict['conflict_resolved']}}>{{conflict['correct_username']}}</td>
+    <td>{{conflict['in_common']}}</td>
+    <td>{{conflict['user1_only']}}</td>
+    <td>{{conflict['user2_only']}}</td>
+  </tr>
+  {% endfor %}
+</table><br>
+</div>
+{% endif %}
+
+{% if responsibility_conflict_list|length > 0 %}
+<div id="responsibility_conflict_list">
+<h4>Journey Responsibility Annotation Conflicts:</h4>
+<a href="{{url_for('conflict.view_journal_responsibility_conflicts', user1=user1, user2=user2)}}">Back to all user conflicts.</a>
+<table style="width:50%" rules="cols" cellpadding="2">
+  <tr>
+    <th>Link</th>
+    <th>Journal Num</th>
+    <th>Resolved?</th>
+    <th>In Common</th>
+    <th>{{user1}} Only</th>
+    <th>{{user2}} Only</th>
+  </tr>
+  {% for conflict in responsibility_conflict_list %}
+  <tr>
+  <td><a href="#{{conflict['journal_oid']}}">
+    Conflict {{loop.index}}</a></td>
+    <td>{{conflict['journal_index'] + 1}}</td>
+    <td><input type="checkbox" onclick="return false;" {{'checked' if conflict['conflict_resolved']}}>{{conflict['correct_username']}}</td>
+    <td>{{conflict['in_common']}}</td>
+    <td>{{conflict['user1_only']}}</td>
+    <td>{{conflict['user2_only']}}</td>
+  </tr>
+  {% endfor %}
+</table><br>
+</div>
+{% endif %}
+
+{% for journal in site['journals'] %}
+  {% include 'sites/journal.html' ignore missing with context %}
+{% endfor %}
+
+<!-- TODO Can reference the minified jquery provided with the web server using url_for(). -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+$( document ).ready(function() {
+
+  // this snippet adds a function to all collapsible blocks that enables them to be expanded
+  var coll = document.getElementsByClassName("collapsible");
+  var i;
+  for (i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          var content = this.nextElementSibling;
+          if (content.style.display === "block") {
+              content.style.display = "none";
+          } else {
+              content.style.display = "block";
+          }
+      });
+  }
+
+  // this snippet populates the author choice checkboxes from the text of the annotation
+  var authorChoices = document.getElementsByClassName("authorChoiceText");
+  var i;
+  for (i = 0; i < authorChoices.length; i++) {
+      var authorType = authorChoices[i].innerHTML;
+      var journalIndex = authorChoices[i].id.replace("authorChoiceText", "");
+      switch (authorType) {
+          case "None":
+              break;
+          case "p":
+              document.getElementById("authorChoiceP" + journalIndex).checked = true;
+              break;
+          case "cg":
+              document.getElementById("authorChoiceCG" + journalIndex).checked = true;
+              break;
+          case "pcg":
+              document.getElementById("authorChoicePCG" + journalIndex).checked = true;
+              break;
+          case "unk":
+              document.getElementById("authorChoiceUNK" + journalIndex).checked = true;
+              break;
+      }
+  }
+
+  // this snippet populates the journey phase checkboxes from the text of the annotation
+  var journeyPhases = document.getElementsByClassName("journeyPhaseText");
+  var i;
+  for (i = 0; i < journeyPhases.length; i++) {
+      var journeyPhaseText = journeyPhases[i].innerHTML;
+      var journalIndex = journeyPhases[i].id.replace("journeyPhaseText", "");
+
+      var phases = ["screening", "info_seeking", "treatment", "cured", "end_of_life", "unknown"];
+      for (var phase_index in phases) {
+          var phase = phases[phase_index];
+          if (journeyPhaseText.includes(phase)) {
+              var phaseCheckboxId = phase + ":journey_phase" + journalIndex;
+              document.getElementById(phaseCheckboxId).checked = true;
+          }
+      }
+  }
+
+  // this snippet populates the patient responsibility checkboxes from the text of the annotation
+  var responsibilities = document.getElementsByClassName("responsibilityText");
+  var i;
+  for (i = 0; i < responsibilities.length; i++) {
+      var responsibilityText = responsibilities[i].innerHTML;
+      var journalIndex = responsibilities[i].id.replace("responsibilityText", "");
+
+      var rep_list = ["communicating", "info_filtering", "clinical_decisions", "preparation", "symptom_management",
+        "support_management", "coordinating_support", "sharing_medical_info", "compliance", "managing_transitions", "financial_management", "continued_monitoring",
+        "giving_back", "behavior_changes", "none"];
+      for (var responsibility_index in rep_list) {
+          var responsibility = rep_list[responsibility_index];
+          if (responsibilityText.includes(responsibility)) {
+              var responsibilityCheckboxId = responsibility + ":responsibility" + journalIndex;
+              document.getElementById(responsibilityCheckboxId).checked = true;
+          }
+      }
+  }
+
+  // this snippet is only relevant if journey phase conflicts exist in the document
+  // It sets the checkboxes from the hidden text field
+  var journeyPhaseConflictResolutions = document.getElementsByClassName("journeyPhaseConflictResolutionText");
+  var i;
+  for (i = 0; i < journeyPhaseConflictResolutions.length; i++) {
+      var correctUsername = journeyPhaseConflictResolutions[i].innerHTML.trim();
+      var journalIndex = journeyPhaseConflictResolutions[i].id.replace("journeyPhaseConflictResolutionText", "");
+      console.log(correctUsername);
+      switch (correctUsername) {
+          case "{{user1}}":
+              document.getElementById("journeyPhaseConflictUser1" + journalIndex).checked = true;
+              break;
+          case "{{user2}}":
+              document.getElementById("journeyPhaseConflictUser2" + journalIndex).checked = true;
+              break;
+      }
+  }
+  
+  // this snippet is only relevant if journey responsibility conflicts exist in the document
+  // It sets the checkboxes from the hidden text field
+  var journeyResponsibilityConflictResolutions = document.getElementsByClassName("journeyResponsibilityConflictResolutionText");
+  var i;
+  for (i = 0; i < journeyResponsibilityConflictResolutions.length; i++) {
+      var correctUsername = journeyResponsibilityConflictResolutions[i].innerHTML.trim();
+      var journalIndex = journeyResponsibilityConflictResolutions[i].id.replace("journeyResponsibilityConflictResolutionText", "");
+      console.log(correctUsername);
+      switch (correctUsername) {
+          case "{{user1}}":
+              document.getElementById("journeyResponsibilityConflictUser1" + journalIndex).checked = true;
+              break;
+          case "{{user2}}":
+              document.getElementById("journeyResponsibilityConflictUser2" + journalIndex).checked = true;
+              break;
+      }
+  }
+});
+
+function noteFocusIn(save_status_id, note_id) {
+    console.log('noteFocusIn', save_status_id, note_id);
+    var status = document.getElementById(save_status_id);
+    status.innerHTML = "Updating note.";
+}
+
+function noteFocusOut(journal_oid, save_status_id, note_id) {
+    console.log('noteFocusOut', journal_oid, save_status_id, note_id);
+    var status = document.getElementById(save_status_id);
+    status.innerHTML = "Saving note.";
+
+    var note = document.getElementById(note_id);
+    console.log('New note value: ', note.value);
+
+    $.post("{{ url_for('sites.view_site', site_id=site['_id']) }}",
+    {
+      journal_oid: journal_oid,
+      note: note.value,
+    },
+    function(response) {
+        console.log('noteFocusOut - Post returned: ', response);
+        if (response !== "OK") {
+            status.innerHTML = response;
+        } else {
+            status.innerHTML = "...";
+        }
+    },
+    "text");
+}
+
+function authorChoiceClick(journal_oid, save_status_id, radio) {
+    console.log('authorChoiceClick', journal_oid, save_status_id, radio.value);
+    var status = document.getElementById(save_status_id);
+    status.innerHTML = "Saving author type.";
+
+    $.post("{{ url_for('sites.view_site', site_id=site['_id']) }}",
+    {
+      journal_oid: journal_oid,
+      journal_author: radio.value,
+    },
+    function(response) {
+        console.log('authorChoiceClick - Post returned: ', response);
+        if (response !== "OK") {
+            status.innerHTML = response;
+        } else {
+            status.innerHTML = "...";
+        }
+    },
+    "text");
+}
+
+function journeyPhaseClick(journal_oid, journal_index, save_status_id, checkbox) {
+    console.log('journeyPhaseClick', journal_oid, journal_index, save_status_id, checkbox.value);
+    var status = document.getElementById(save_status_id);
+    status.innerHTML = "Saving journey phases selection.";
+
+    var journey_phase_string = "";
+    // For each checkbox, if it is checked add it to the journey phases
+    var phases = ["screening", "info_seeking", "treatment", "cured", "end_of_life", "unknown"];
+    for (var phase_index in phases) {
+        var phase = phases[phase_index];
+        var phaseCheckboxId = phase + ":journey_phase" + journal_index;
+        if (document.getElementById(phaseCheckboxId).checked) {
+            journey_phase_string = journey_phase_string + phase + "|"
+        }
+    }
+    if (journey_phase_string.slice(-1) == '|') {
+        journey_phase_string = journey_phase_string.slice(0, -1);
+    }
+    console.log("Constructed journey phase descriptor string:", journey_phase_string);
+
+    $.post("{{ url_for('sites.view_site', site_id=site['_id']) }}",
+    {
+      journal_oid: journal_oid,
+      journey_phases: journey_phase_string,
+    },
+    function(response) {
+        console.log('journeyPhaseClick - Post returned: ', response);
+        if (response !== "OK") {
+            status.innerHTML = response;
+        } else {
+            status.innerHTML = "...";
+        }
+    },
+    "text");
+}
+
+function responsibilityClick(journal_oid, journal_index, save_status_id, checkbox) {
+    console.log('responsibilityClick', journal_oid, journal_index, save_status_id, checkbox.value);
+    var status = document.getElementById(save_status_id);
+    status.innerHTML = "Saving journey phases selection.";
+
+    var responsibility_string = "";
+    // For each checkbox, if it is checked add it to the responsibilities
+    var phases = ["communicating", "info_filtering", "clinical_decisions", "preparation", "symptom_management",
+        "support_management", "coordinating_support", "sharing_medical_info", "compliance", "managing_transitions", "financial_management", "continued_monitoring",
+        "giving_back", "behavior_changes", "none"];
+    for (var phase_index in phases) {
+        var phase = phases[phase_index];
+        var phaseCheckboxId = phase + ":responsibility" + journal_index;
+        if (document.getElementById(phaseCheckboxId).checked) {
+            responsibility_string = responsibility_string + phase + "|"
+        }
+    }
+    if (responsibility_string.slice(-1) == '|') {
+        responsibility_string = responsibility_string.slice(0, -1);
+    }
+    console.log("Constructed responsibility descriptor string:", responsibility_string);
+
+    $.post("{{ url_for('sites.view_site', site_id=site['_id']) }}",
+    {
+      journal_oid: journal_oid,
+      responsibilities: responsibility_string,
+    },
+    function(response) {
+        console.log('responsibilityClick - Post returned: ', response);
+        if (response !== "OK") {
+            status.innerHTML = response;
+        } else {
+            status.innerHTML = "...";
+        }
+    },
+    "text");
+}
+
+{% if phase_conflict_list|length > 0 %}
+function journeyPhaseConflictClick(journal_oid, radio) {
+    console.log('journeyPhaseConflictClick', journal_oid, radio.value);
+    $.post("{{ url_for('conflict.view_site_journal_phase_conflicts', user1=user1, user2=user2, site_id=site['_id']) }}",
+    {
+      journal_oid: journal_oid,
+      conflict_type: "journal_journey_phase",
+      correct_username: radio.value,
+    },
+    function(response) {
+        console.log('journeyPhaseConflictClick - Post returned: ', response);
+        if (response !== "OK") {
+            console.log('CONFLICT RESOLUTION NOT SAVED.');
+        }
+    },
+    "text");
+}
+{% endif %}
+
+{% if responsibility_conflict_list|length > 0 %}
+function patientResponsibilityConflictClick(journal_oid, radio) {
+    console.log('patientResponsibilityConflictClick', journal_oid, radio.value);
+    $.post("{{ url_for('conflict.view_site_journal_responsibility_conflicts', user1=user1, user2=user2, site_id=site['_id']) }}",
+    {
+      journal_oid: journal_oid,
+      conflict_type: "journal_patient_responsibilities",
+      correct_username: radio.value,
+    },
+    function(response) {
+        console.log('patientResponsibilityConflictClick - Post returned: ', response);
+        if (response !== "OK") {
+            console.log('CONFLICT RESOLUTION NOT SAVED.');
+        }
+    },
+    "text");
+}
+{% endif %}
+
+function post(path, params, method) {
+    // https://stackoverflow.com/questions/133925/javascript-post-request-like-a-form-submit
+    method = method || "post"; // Set method to post by default if not specified.
+
+    var form = document.createElement("form");
+    form.setAttribute("method", method);
+    form.setAttribute("action", path);
+
+    for (var key in params) {
+        if (params.hasOwnProperty(key)) {
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", key);
+            hiddenField.setAttribute("value", params[key]);
+
+            form.appendChild(hiddenField);
+        }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+
+{% endblock %}

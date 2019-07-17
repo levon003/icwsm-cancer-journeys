@@ -1,0 +1,62 @@
+{% extends 'template.html' %}
+
+{% block title %} Patient Responsibility {% endblock %}
+
+{% block leftbar %}
+
+{% endblock %}
+
+{% block content %}
+
+<h2>Tagging Cancer Phases</h2>
+
+<!-- This markdown document is written exclusively with HTML tags so that it can be inserted directly into an HTML page containing the same content. -->
+
+(All quoted text is quoted from Maia Jacobs' <a href="https://dl.acm.org/citation.cfm?id=3021337">"A Cancer Journey Framework: Guiding the Design of Holistic Health Technology"</a>. All text quotes from CaringBridge journals are paraphrased.)
+
+<h4>What are "phases"?</h4>
+
+<p>"We organized our findings across four overarching cancer phases used in related literature: screening and diagnosis, information seeking, acute care and treatment, and no evidence of disease. While not all patients follow this treatment path, the phases help to demonstrate how patients' needs and priorities shift over time, a critical component to consider when designing health tools."</p>
+
+<p>"Whereas staging and disease trajectories all map to a unidirectional non-branching path, a journey allows for divergent, convergent, and even circular paths. Given the now chronic nature of cancer, and its common disappearance, reappearance, and constant threat to health, the journey metaphor maps more appropriately.  The data from this study indicate major commonalities across each unique journey expressed in five major phases." (Hayes et al. 2008, <a href="https://link.springer.com/chapter/10.1007/978-3-540-79576-6_16" >"Acute "</a>) All subsequent quotes are from the Hayes et al. piece, on which the Jacobs et al. phases are based.</p>
+
+<h4>Core Guidance</h4>
+
+<p>Tag a particular phase for a journal based on your understanding of the patient's phase at the time the journal was posted. The guidance below contains additional pointers and examples.</p>
+
+<h4>Phases:</h4>
+
+<ul style="padding: 10px; list-style-type: circle">
+<li><strong>Pre-treatment</strong>: We collapsed the first two phases of the cancer journey framework into a single "pre-treatment" phase, because we found that it wasn't feasible to distinguish between the screening and diagnosis and information seeking phases from CaringBridge posts.  While you will see checkboxes for both screening and diagnosis as well as information seeking, you should use the "Information Seeking" checkbox for all pre-treatment posts.
+    <ul style="padding: 10px; list-style-type: circle">
+        <li><strong>Screening and diagnosis</strong>:
+            "The screening and diagnosis phase begins with an individual experiencing some impetus to get 'checked'." Often this impetus is regular screening, occasionally an obvious/acute symptom.
+        </li>
+        <li><strong>Information seeking</strong>: "The information-seeking phase generally begins as soon as a diagnosis is made and continues for one to several weeks. During this phase, newly diagnosed patients often reported seeking multiple opinions and therefore getting even more tests and reports."
+
+        </li>
+    </ul>
+    <em>Guidance:</em>  Generally, biopsies (surgeries to remove tumors or parts of tumors for the purpose of diagnosing cancer) are not considered to be acute treatment.  One common indicator that marks the transition from Pre-treatment to Acute Treatment is the insertion of a port (for the delivery of future chemo).  If the patient has had the port inserted, then they are now in Acute Treatment.  On the client interface, you should check the "Info Seeking" checkbox in order to select the Pre-treatment phase.
+</li>
+
+<li><strong>Acute care and treatment</strong>: "Once a treatment plan is in place, acute care and aggressive treatment begins. The medical team, patient, and support network implement a plan that may include multiple chemical treatments as well as physical treatments such as radiation and surgery."
+    <br>
+    <em>Guidance:</em> Everything revolves around the big three: radiation, surgery, and chemotherapy.  Generally, other things like prescription drugs do not count as acute treatment unless it is the sole treatment in the treatment plan.  When the big three are over, the Acute Treatment phase is also over. Note that there can be very long gaps between treatments, for example a month or more between surgery and chemo, but the patient is still considered to be in acute care during that time.  Similarly, the patient may be declared cancer-free or no-evidence-of-disease while still undergoing acute treatment (e.g. radiation), however they are still considered to be in the Acute Treatment phase until they are finished with the treatment.
+</li>
+
+<li><strong>No evidence of disease</strong>: "If the acute treatment phase goes well, and the cancer was at an early stage, patients are sometimes deemed to be 'cured' or to have 'no evidence of disease' (NED). Unlike some other phases we described, NED is also a medical descriptor. Some people choose the NED designation because it denotes that recurrence of the cancer is of concern and that it may be hiding in the body while remaining undetectable.  This concern contributes to a culture of continued monitoring and use of medical treatments and holistic remedies to reduce chances of recurrence."
+    <br>
+  <em>Guidance:</em> See the guidance for Acute Care.  One common procedure to watch out for is reconstruction surgery (usually of breasts, for breast cancer patients who received full or partial mastectomies).  While reconstruction is often referred to as "surgery" by patients, we don't consider it to be a part of Acute Treatment.
+</li>
+
+<li><strong>End-of-life</strong>: In Hayes et al., this phase is called "Chronic care and disease management".  "When the possibility of a patient ever gaining [No Evidence of Disease] status disappears, patients move into chronic care and disease management. ... those dealing with chronic cancer care assume that the cancer is eventually a terminal condition."  "Quality of life" and "managing the disease" are critical during this phase. Hayes et al. end their discuss on this note: "Without connected, digital records, it is hard if not impossible to look for the kind of higher level information across multiple patients that can support the discovery of trends in both occurrence and treatment on a large scale."<br>
+    <em>Guidance:</em> We don't have great guidance for this because we haven't seen many end-of-life posts yet.  In general, you'll be looking for the big three to be completed and for the patient to not be pursuing additional treatment of the cancer itself i.e. the condition is being treated as terminal. All journals published after the death of the patient are in the End-of-life phase.
+  </li>
+
+<li><strong>Unknown</strong>: Use the Unknown tag alone to indicate that you have no idea what phase a journal is or if the journal is malformed in some obvious way, e.g. it has no text or non-English text. Use the Unknown tag along with another phase for one of these two cases: (1) you are pretty sure you know which phase it is, but there is no textual evidence in this journal that indicates the phase or (2) lack of confidence in the phase for some reason, e.g. an ambiguous phrase.  Use the Unknown tag along with two other phases to indicate your uncertainty about a transition: if you are unsure if the post falls during the transition period or if you are uncertain which of the two phases this journal was published during.  (If you think it is fairly clear that the journal does occur during a period of transition between phases, you can omit the Unknown tag.)   In general, liberal use of the unknown tag is encouraged in all circumstances when you are uncertain.
+  </li>
+
+</ul>
+
+<p>If you have any questions at all about the guidance in this document, please contact Zach Levonian (levon003@umn.edu).</p>
+{% endblock %}

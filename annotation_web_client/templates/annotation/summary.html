@@ -1,0 +1,49 @@
+{% extends 'template.html' %}
+
+{% block title %}Annotation Summary{% endblock %}
+
+{% block leftbar %}
+<h3>Journal annotations:</h3>
+
+  <ul>
+    <li><b>Notes:</b> {{ journal_notes|length }}</li>
+    <li><b>Author types:</b> {{ journal_author_types|length }}</li>
+    <li><b>Journey phases:</b> {{ journal_journey_phases|length }}</li>
+  </ul>
+
+{% endblock %}
+
+{% block content %}
+<p>Summary of existing annotations.</p>
+
+
+<h2>Journal annotations:</h2>
+
+  <ul>
+    <li><b>Notes:</b> {{ journal_notes|length }}</li>
+    <li><b>Author types:</b> {{ journal_author_types|length }}</li>
+    <li><b>Journey phases:</b> {{ journal_journey_phases|length }}</li>
+  </ul>
+
+<div>
+<a href="{{ url_for('conflict.view_journal_phase_conflict_summary') }}">View phase conflicts.</a>
+<br>
+<a href="{{ url_for('conflict.view_journal_responsibility_conflict_summary') }}">View responsibility conflicts.</a>
+  <br>
+  <br>
+  <a href="{{ url_for('annotation.view_journal_annotation_feed') }}">View journal annotation feed.</a>
+</div>
+
+<h3>Note annotations:</h3>
+
+<ul>
+{% for group in journal_notes|groupby('annotator_username') %}
+  <h4>Annotator: <a href="{{url_for('annotation.view_annotator_summary', annotator_username=group.grouper)}}">{{group.grouper}}</a></h4>
+  {% for note in group.list %}
+  <li><a href="{{ url_for('sites.view_site', site_id=note['site_id']) }}#{{note['journal_oid']}}">
+    <b>Site {{ note['site_id'] }}</b> -- {{ note['data'] }}
+  </a></li>
+  {% endfor %}
+{% endfor %}
+</ul>
+{% endblock %}

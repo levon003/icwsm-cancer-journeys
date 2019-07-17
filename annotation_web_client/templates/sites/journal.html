@@ -1,0 +1,325 @@
+<!-- This file contains all of the code to render a single journal, and should be interpreted in terms of view.html -->
+<!-- Expected data objects:
+    journal
+    config.show_annotation_tools
+
+    Optional data objects:
+    phase_conflict_list
+    responsibility_conflict_list
+    show_annotation_tools
+-->
+<div id="{{ journal['index'] }}">
+    <b><a href="#{{ journal['index'] }}" id="{{ journal['journal_oid'] }}">Journal {{ journal['index'] }}</a></b><br>
+    Title:  <b>{{ journal['title'] }}</b><br>
+    Journal Id:  {{ journal['journal_id'] }}<br>
+    Author:  {{ journal['author_text'] }} (Id {{ journal['userId_repr'] }}) <br>
+    Author type (predicted):  {{ journal['author_prediction_repr'] }}<br>
+    Amps:  {{ journal['amp_count'] }}<br>
+    Created:  {{ journal['createdAt_repr'] }}<br>
+    Updated:  {{ journal['updatedAt_repr'] }}<br>
+    Journey Phase:  {{ journal['journey_phase_repr'] }}<br>
+    <div class="journal_body">{{ journal['body']|safe }}</div><br>
+
+    {% if config.show_annotation_tools and g.user %}
+    {% if show_annotation_tools is undefined or show_annotation_tools %}
+    <!-- Annotation data and editing form -->
+    <div>
+      <label for="notes{{journal['index']}}">Notes:</label>
+      <input type="text" id="notes{{journal['index']}}" class="journal_note"
+             onfocusout="noteFocusOut('{{journal['journal_oid']}}', 'save_status{{journal['index']}}', 'notes{{journal['index']}}')"
+             onfocusin="noteFocusIn('save_status{{journal['index']}}', 'notes{{journal['index']}}')"
+             value="{{ journal['annotation']['note'] }}"
+             autocomplete="off"> <!-- autocomplete off is necessary to accurately display current value -->
+      <br>
+      <!-- Author choice radio buttons -->
+      <div>
+        <p class="authorChoiceText" id="authorChoiceText{{journal['index']}}" hidden>{{ journal['annotation']['author_type'] }}</p>
+
+        <label>Author type:</label>
+        <input type="radio" id="authorChoiceP{{journal['index']}}"
+         name="journal_author{{journal['index']}}" value="p" autocomplete="off"
+         onclick="authorChoiceClick('{{journal['journal_oid']}}', 'save_status{{journal['index']}}', this)">
+        <label for="authorChoiceP{{journal['index']}}">Patient</label>
+
+        <input type="radio" id="authorChoiceCG{{journal['index']}}"
+         name="journal_author{{journal['index']}}" value="cg" autocomplete="off"
+         onclick="authorChoiceClick('{{journal['journal_oid']}}', 'save_status{{journal['index']}}', this)">
+        <label for="authorChoiceCG{{journal['index']}}">Caregiver</label>
+
+        <input type="radio" id="authorChoicePCG{{journal['index']}}"
+         name="journal_author{{journal['index']}}" value="pcg" autocomplete="off"
+         onclick="authorChoiceClick('{{journal['journal_oid']}}', 'save_status{{journal['index']}}', this)">
+        <label for="authorChoicePCG{{journal['index']}}">P/CG</label>
+
+        <input type="radio" id="authorChoiceUNK{{journal['index']}}"
+         name="journal_author{{journal['index']}}" value="unk" autocomplete="off"
+         onclick="authorChoiceClick('{{journal['journal_oid']}}', 'save_status{{journal['index']}}', this)">
+        <label for="authorChoiceUNK{{journal['index']}}">Unknown</label>
+      </div>
+
+      <!-- Journey phase checkboxes -->
+      <div>
+        <p class="journeyPhaseText" id="journeyPhaseText{{journal['index']}}" hidden>{{ journal['annotation']['journey_phases'] }}</p>
+
+        <label>Journey phase: <a href="{{url_for('annotation.phase_tagging_note')}}">?</a></label>
+        <input type="checkbox" id="screening:journey_phase{{journal['index']}}"
+         name="journey_phase{{journal['index']}}" value="screening" autocomplete="off"
+         onclick="return false;" disabled>
+        <label for="screening:journey_phase{{journal['index']}}">Screening and Diagnosis</label>
+
+        <input type="checkbox" id="info_seeking:journey_phase{{journal['index']}}"
+         name="journey_phase{{journal['index']}}" value="info_seeking" autocomplete="off"
+         onclick="journeyPhaseClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="info_seeking:journey_phase{{journal['index']}}">Information Seeking</label>
+
+        <input type="checkbox" id="treatment:journey_phase{{journal['index']}}"
+         name="journey_phase{{journal['index']}}" value="treatment" autocomplete="off"
+         onclick="journeyPhaseClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="treatment:journey_phase{{journal['index']}}">Acute Care and Treatment</label>
+
+        <input type="checkbox" id="cured:journey_phase{{journal['index']}}"
+         name="journey_phase{{journal['index']}}" value="cured" autocomplete="off"
+         onclick="journeyPhaseClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="cured:journey_phase{{journal['index']}}">No Evidence of Disease</label>
+
+        <input type="checkbox" id="end_of_life:journey_phase{{journal['index']}}"
+         name="journey_phase{{journal['index']}}" value="end_of_life" autocomplete="off"
+         onclick="journeyPhaseClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="end_of_life:journey_phase{{journal['index']}}">End of Life</label>
+
+        <input type="checkbox" id="unknown:journey_phase{{journal['index']}}"
+         name="journey_phase{{journal['index']}}" value="unknown" autocomplete="off"
+         onclick="journeyPhaseClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="unknown:journey_phase{{journal['index']}}">Unknown</label>
+      </div>
+
+      <!-- Patient responsibility checkboxes -->
+      <div>
+        <p class="responsibilityText" id="responsibilityText{{journal['index']}}" hidden>{{ journal['annotation']['responsibilities'] }}</p>
+
+        <label>Patient responsibilities: <a href="{{url_for('annotation.responsibility_tagging_note')}}">?</a></label>
+        <br>
+        <input type="checkbox" id="communicating:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="communicating" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="communicating:responsibility{{journal['index']}}">Communicating the disease to others</label>
+
+        <input type="checkbox" id="info_filtering:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="info_filtering" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="info_filtering:responsibility{{journal['index']}}">Information filtering and organization</label>
+
+        <input type="checkbox" id="clinical_decisions:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="clinical_decisions" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="clinical_decisions:responsibility{{journal['index']}}">Clinical decisions</label>
+
+        <input type="checkbox" id="preparation:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="preparation" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="preparation:responsibility{{journal['index']}}">Preparation</label>
+        <br>
+
+        <input type="checkbox" id="symptom_management:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="symptom_management" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="symptom_management:responsibility{{journal['index']}}">Symptom tracking</label>
+
+        <input type="checkbox" id="support_management:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="support_management" autocomplete="off"
+         onclick="return false;" disabled>
+        <label for="support_management:responsibility{{journal['index']}}">Support management</label>
+
+        <input type="checkbox" id="coordinating_support:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="coordinating_support" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="coordinating_support:responsibility{{journal['index']}}"><strong>Coordinating support</strong></label>
+
+        <input type="checkbox" id="sharing_medical_info:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="sharing_medical_info" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="sharing_medical_info:responsibility{{journal['index']}}"><strong>Sharing medical information</strong></label>
+
+        <input type="checkbox" id="compliance:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="compliance" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="compliance:responsibility{{journal['index']}}"><strong>Compliance</strong></label>
+
+        <input type="checkbox" id="managing_transitions:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="managing_transitions" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="managing_transitions:responsibility{{journal['index']}}">Managing clinical transitions</label>
+        <br>
+
+        <input type="checkbox" id="financial_management:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="financial_management" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="financial_management:responsibility{{journal['index']}}"><strong>Financial management</strong></label>
+
+        <input type="checkbox" id="continued_monitoring:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="continued_monitoring" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="continued_monitoring:responsibility{{journal['index']}}">Continued monitoring</label>
+
+        <input type="checkbox" id="giving_back:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="giving_back" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="giving_back:responsibility{{journal['index']}}"><strong>Giving back to the community</strong></label>
+
+        <input type="checkbox" id="behavior_changes:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="behavior_changes" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="behavior_changes:responsibility{{journal['index']}}"><strong>Health behavior changes</strong></label>
+
+        <input type="checkbox" id="none:responsibility{{journal['index']}}"
+         name="responsibility{{journal['index']}}" value="none" autocomplete="off"
+         onclick="responsibilityClick('{{journal['journal_oid']}}', '{{journal['index']}}', 'save_status{{journal['index']}}', this)">
+        <label for="none:responsibility{{journal['index']}}">None</label>
+      </div>
+
+      <div id="save_status{{journal['index']}}">...</div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- If there is a conflict on this journal, show it here. -->
+    {% if phase_conflict_list is defined %}
+      {% if phase_conflict_list|length > 0 %}
+      {% for grouper, list in phase_conflict_list|groupby('journal_index') %}
+        {% if journal['index']|int == grouper + 1 %}
+        <!-- Red vs Medium Seagreen color for the border based on the conflict's resolution status.-->
+        <div class="conflict" style="border-color: {{'#426F42' if list[0]['conflict_resolved'] else '#cc2f2e'}};">
+        <table rules="cols" cellpadding="2">
+          <tr>
+            <th>Phase</th>
+            <th>{{user1}}</th>
+            <th>{{user2}}</th>
+          </tr>
+          <tr>
+            <td>Screening and Diagnosis</td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'screening' in list[0]['user1_phase_list']}}></td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'screening' in list[0]['user2_phase_list']}}></td>
+          </tr>
+          <tr>
+            <td>Information Seeking</td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'info_seeking' in list[0]['user1_phase_list']}}></td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'info_seeking' in list[0]['user2_phase_list']}}></td>
+
+          </tr>
+          <tr>
+            <td>Acute Care and Treatment</td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'treatment' in list[0]['user1_phase_list']}}></td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'treatment' in list[0]['user2_phase_list']}}></td>
+
+          </tr>
+          <tr>
+            <td>No Evidence of Disease</td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'cured' in list[0]['user1_phase_list']}}></td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'cured' in list[0]['user2_phase_list']}}></td>
+
+          </tr>
+          <tr>
+            <td>End of Life</td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'end_of_life' in list[0]['user1_phase_list']}}></td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'end_of_life' in list[0]['user2_phase_list']}}></td>
+
+          </tr>
+          <tr>
+            <td>Unknown</td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'unknown' in list[0]['user1_phase_list']}}></td>
+            <td><input type="checkbox" onclick="return false;" {{'checked' if 'unknown' in list[0]['user2_phase_list']}}></td>
+          </tr>
+        </table>
+        <br>
+        <!-- Controls to indicate whose annotation should be preferred. -->
+        <div>
+        <p class="journeyPhaseConflictResolutionText" id="journeyPhaseConflictResolutionText{{journal['index']}}" hidden>
+          {{ list[0]['correct_username'] }}</p>
+
+        <label>Prefer which user's annotation?</label>
+        <input type="radio" id="journeyPhaseConflictUser1{{journal['index']}}"
+         name="journeyPhaseConflict{{journal['index']}}" value="{{user1}}" autocomplete="off"
+         onclick="journeyPhaseConflictClick('{{journal['journal_oid']}}', this)">
+        <label for="journeyPhaseConflictUser1{{journal['index']}}">{{user1}}</label>
+
+        <input type="radio" id="journeyPhaseConflictUser2{{journal['index']}}"
+         name="journeyPhaseConflict{{journal['index']}}" value="{{user2}}" autocomplete="off"
+         onclick="journeyPhaseConflictClick('{{journal['journal_oid']}}', this)">
+        <label for="journeyPhaseConflictUser2{{journal['index']}}">{{user2}}</label>
+
+        <input type="radio" id="journeyPhaseConflictUserMe{{journal['index']}}"
+         name="journeyPhaseConflict{{journal['index']}}" value="{{g.user['username']}}" autocomplete="off"
+         onclick="journeyPhaseConflictClick('{{journal['journal_oid']}}', this)">
+        <label for="journeyPhaseConflictUserMe{{journal['index']}}">Me ({{g.user['username']}})</label>
+        </div>
+
+        <!-- Links back to the summary and the next item. -->
+        <a style="border-style: solid; border-color: #2b2b2b; margin: 2px; display: inline-block; padding: 2px;"
+           href="#phase_conflict_list">Conflict Summary</a>
+        {% if not loop.last %}
+        <a style="border-style: solid; border-color: #2b2b2b; margin: 2px; display: inline-block; padding: 2px;"
+           href="#{{ loop.nextitem.grouper + 1 }}">Next Conflict</a>
+        {% endif %}
+      </div>
+        {% endif %}
+      {% endfor %}
+      {% endif %}
+    {% endif %}
+
+    {% if responsibility_conflict_list is defined %}
+      {% if responsibility_conflict_list|length > 0 %}
+      {% for grouper, list in responsibility_conflict_list|groupby('journal_index') %}
+        {% if journal['index']|int == grouper + 1 %}
+        <!-- Red vs Medium Seagreen color for the border based on the conflict's resolution status.-->
+        <div class="conflict" style="border-color: {{'#426F42' if list[0]['conflict_resolved'] else '#cc2f2e'}};">
+        <p>{{user1}}: {{list[0]['user1_responsibility_list']}}
+          <br>{{user2}}: {{list[0]['user2_responsibility_list']}}</p>
+        <br>
+        <!-- Controls to indicate whose annotation should be preferred. -->
+        <div>
+        <p class="journeyResponsibilityConflictResolutionText" id="journeyResponsibilityConflictResolutionText{{journal['index']}}" hidden>
+          {{ list[0]['correct_username'] }}</p>
+
+        <label>Prefer which user's annotation?</label>
+        <input type="radio" id="journeyResponsibilityConflictUser1{{journal['index']}}"
+         name="journeyResponsibilityConflict{{journal['index']}}" value="{{user1}}" autocomplete="off"
+         onclick="patientResponsibilityConflictClick('{{journal['journal_oid']}}', this)">
+        <label for="journeyResponsibilityConflictUser1{{journal['index']}}">{{user1}}</label>
+
+        <input type="radio" id="journeyResponsibilityConflictUser2{{journal['index']}}"
+         name="journeyResponsibilityConflict{{journal['index']}}" value="{{user2}}" autocomplete="off"
+         onclick="patientResponsibilityConflictClick('{{journal['journal_oid']}}', this)">
+        <label for="journeyResponsibilityConflictUser2{{journal['index']}}">{{user2}}</label>
+
+        <input type="radio" id="journeyResponsibilityConflictUserMe{{journal['index']}}"
+         name="journeyResponsibilityConflict{{journal['index']}}" value="{{g.user['username']}}" autocomplete="off"
+         onclick="patientResponsibilityConflictClick('{{journal['journal_oid']}}', this)">
+        <label for="journeyResponsibilityConflictUserMe{{journal['index']}}">Me ({{g.user['username']}})</label>
+        </div>
+
+        <!-- Links back to the summary and the next item. -->
+        <a style="border-style: solid; border-color: #2b2b2b; margin: 2px; display: inline-block; padding: 2px;"
+           href="#responsibility_conflict_list">Conflict Summary</a>
+        {% if not loop.last %}
+        <a style="border-style: solid; border-color: #2b2b2b; margin: 2px; display: inline-block; padding: 2px;"
+           href="#{{ loop.nextitem.grouper + 1 }}">Next Conflict</a>
+        {% endif %}
+      </div>
+        {% endif %}
+      {% endfor %}
+      {% endif %}
+    {% endif %}
+
+    <div style="padding-left: 20px;padding-right: 20px">
+      <b>Replies: {{ journal['reply_count'] }}<br></b>
+      {% if journal['reply_count'] > 0 %}
+        <button class="collapsible">Show Replies</button>
+        <div class="hiddencontent">
+        {% for reply in journal['replies'] %}
+          <b>Reply {{ reply['index'] }}</b> User {{ reply['author_id'] }} ({{ reply['amps_count'] }} amps) {{ reply['createdAt_repr'] }}<br>
+                      {{ reply['body'] }}  --{{ reply['signature'] }}<br>
+        {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>

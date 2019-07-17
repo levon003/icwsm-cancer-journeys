@@ -1,0 +1,191 @@
+{% extends 'template.html' %}
+
+{% block title %}Responsibility {{ responsibility }} Discussion -  {% block title_responsibility_discussion_phase %} Reconsider {% endblock %} - Site {{ site['_id'] }} journal {{ journal['index'] }} {% endblock %}
+
+{% block leftbar %}
+
+<h3>Discussion Metadata:</h3>
+
+  <ul>
+    <li><b>Responsibility:</b> {{ responsibility }}</li>
+    <li><b>Evidence user:</b> {{ evidence_user }}</li>
+    <li><b>Reconsider user:</b> {{ reconsider_user }}</li>
+  </ul>
+
+  <h3>Site Metadata:</h3>
+
+  <ul>
+    <li><b>Site Id:</b> {{ site['_id'] }}</li>
+    <li><b>Title:</b> {{ site['title'] }}</li>
+    <li><b>Health Condition:</b> {{ site['healthCondition_repr'] }}</li>
+    <li><b>Privacy:</b> {{ site['privacy'] }}</li>
+    <li><b>Created:</b> {{ site['createdAt_repr'] }}</li>
+    <li><b>Updated:</b> {{ site['updatedAt_repr'] }}</li>
+    <li><b>Visits:</b> {{ site['visits']|int }}</li>
+  </ul>
+{% endblock %}
+
+{% block content %}
+<h2>Site {{ site['_id'] }}</h2>
+
+<h3>Title: {{ site['title'] }}</h3>
+
+  <ul>
+    <li><b>Health Condition:</b> {{ site['healthCondition_repr'] }}</li>
+    <li><b>Privacy:</b> {{ site['privacy'] }}</li>
+    <li><b>Created:</b> {{ site['createdAt_repr'] }}</li>
+    <li><b>Updated:</b> {{ site['updatedAt_repr'] }}</li>
+    <li><b>Visits:</b> {{ site['visits']|int }}</li>
+    <li><b>Direct journal link:</b> <a href="{{ url_for('sites.view_site', site_id=site['_id']) }}#{{ journal['journal_oid'] }}">link</a></li>
+  </ul>
+
+<h4>Total journals: {{ site['journal_count'] }}</h4>
+
+<h4>Responsibility: {{ responsibility }} <a href="{{url_for('annotation.responsibility_tagging_note')}}">?</a></h4>
+
+<h3>Journal under discussion: </h3>
+
+<!-- This template assumes that the "journal" object is provided along with the site. -->
+{% include 'sites/journal.html' ignore missing with context %}
+
+{% block discussion_form %}
+<div class="discussion">
+    <!--<p>{{reconsider_user}}, you indicated this journal <b>does not include</b> the '{{responsibility}}' responsibility.</p>-->
+    <p>{{evidence_user}} provided the following evidence in support of this journal containing the '{{responsibility}}' responsibility:</p>
+    <div>
+        <p id="existing_highlighted_text" hidden>{{highlighted_text_evidence}}</p>
+        <ul id="highlightedTextListReadOnly" class="highlightedTextListReadOnly">
+        </ul>
+        <p id="evidence_description">Additional explanation:<br>{{additional_discussion_evidence}}</p>
+        <br>
+
+        <label>In light of the highlighted evidence and your own consideration of this journal with respect to the <a href="{{url_for('annotation.responsibility_tagging_note')}}">codebook</a>:</label><br>
+        <input type="radio" id="reconsiderChoiceResolved"
+         name="reconsiderChoice" value="resolved" autocomplete="off"
+         onclick="" {{"checked" if is_annotation_changed == "yes" else ""}}>
+        <label for="reconsiderChoiceResolved">The highlighted evidence supports the claim that this journal contains {{responsibility}}</label>
+        <br>
+        <input type="radio" id="reconsiderChoiceIrresolvable"
+         name="reconsiderChoice" value="irresolvable" autocomplete="off"
+         onclick="" {{"checked" if is_annotation_changed == "no" else ""}}>
+        <label for="reconsiderChoiceIrresolvable">The highlighted evidence does <b>not</b> support the claim that this journal contains {{responsibility}}</label>
+
+        <textarea id="reconsider_feedback" class="discussion" rows="4" placeholder="Add additional explanation or thoughts here." autocomplete="off">{{additional_discussion}}</textarea>
+
+        <button onclick="goToNext()">Next (without saving)</button>
+        <button onclick="save_evidence(false)">Save</button>
+        <button onclick="save_evidence(true)">Save and Next Post</button>
+    </div>
+</div>
+{% endblock %}
+
+<!-- TODO Can reference the minified jquery provided with the web server using url_for(). -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+var original_journal_text;
+$( document ).ready(function() {
+
+    // this snippet adds a function to all collapsible blocks that enables them to be expanded
+    var coll = document.getElementsByClassName("collapsible");
+    var i;
+    for (i = 0; i < coll.length; i++) {
+        coll[i].addEventListener("click", function () {
+            this.classList.toggle("active");
+            var content = this.nextElementSibling;
+            if (content.style.display === "block") {
+                content.style.display = "none";
+            } else {
+                content.style.display = "block";
+            }
+        });
+    }
+
+    original_journal_text = $(".journal_body").html();
+
+    let existing_highlighted_text = document.getElementById("existing_highlighted_text").innerHTML;
+    let existing_text_snippets = existing_highlighted_text.split("|");
+    for (i = 0; i < existing_text_snippets.length; i++) {
+        if (existing_text_snippets[i] !== "") {
+            appendToHighlightedTextList(existing_text_snippets[i]);
+        }
+    }
+    highlightText(existing_text_snippets);
+
+});
+
+function save_evidence(go_to_next) {
+    let is_annotation_changed;
+    if (document.getElementById("reconsiderChoiceResolved").checked) {
+        is_annotation_changed = true;
+    } else if (document.getElementById("reconsiderChoiceIrresolvable").checked) {
+        is_annotation_changed = false;
+    } else {
+        // Neither option is checked, so we can't save.
+        alert("You must select one of the two options above.");
+        return;
+    }
+
+    $.post("{{ url_for('responsibility_discussion.view_journal_discussion',phase=phase,evidence_user=evidence_user,reconsider_user=reconsider_user,responsibility=responsibility,discussion_id=discussion_id) }}",
+    {
+        site_id: "{{site['_id']}}",
+        journal_oid: "{{journal['journal_oid']}}",
+        batch_id: "{{batch_id}}",
+        additional_discussion: $("#reconsider_feedback").val(),
+        highlighted_text: "",
+        is_annotation_changed: is_annotation_changed,
+    },
+    function(response) {
+        console.log('save_evidence - Post returned: ', response);
+        if (response !== "OK") {
+            console.log("Failure.");
+            alert("Failed to save! Try again, and let levon003 know this happened.")
+        } else {
+            console.log("Success.");
+            if (go_to_next) {
+                goToNext();
+            }
+        }
+    },
+    "text");
+}
+
+function appendToHighlightedTextList(new_text) {
+    const max_text_length = 512;
+    let trimmed_text = new_text.length > max_text_length ?
+                    new_text.substring(0, max_text_length - 3) + "..." :
+                    new_text;
+    let new_li = "<li class='discussionReadOnly'>" + trimmed_text + "</li>";
+    $("#highlightedTextListReadOnly").append(new_li);
+}
+
+function highlightText(highlightedText)
+{
+    const journal_body = ".journal_body";
+    let new_journal_html = original_journal_text;
+    for (let i = 0; i < highlightedText.length; i++) {
+        let textToReplace = escapeRegExp(highlightedText[i]);
+        // Need to escape HTML entities
+        textToReplace = textToReplace.replace(/ +/g, '( |&nbsp;)+');
+        textToReplace = textToReplace.replace(/&/g, '(&|&amp;)+');
+        textToReplace = textToReplace.replace(/"/g, '("|&quot;)+');
+        textToReplace = textToReplace.replace(/</g, '(<|&lt;)+');
+        textToReplace = textToReplace.replace(/>/g, '(>|&gt;)+');
+        let regex = new RegExp(textToReplace, "g");
+        //console.log(new_journal_html.match(regex), regex, new_journal_html);
+        new_journal_html = new_journal_html.replace(regex, "<span class='discussion'>$&</span>");
+    }
+    $(journal_body).html(new_journal_html);
+}
+
+function escapeRegExp(string) {
+    // https://stackoverflow.com/a/6969486/4146714
+    return string.replace(/[*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+function goToNext() {
+    window.location.href = "{{ url_for('responsibility_discussion.view_journal_discussion',phase=phase,evidence_user=evidence_user,reconsider_user=reconsider_user,responsibility=responsibility,discussion_id=next_discussion_id)}}";
+}
+
+</script>
+
+{% endblock %}

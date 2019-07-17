@@ -1,0 +1,67 @@
+{% extends 'template.html' %}
+
+{% block title %}{{ username }} Annotation Summary{% endblock %}
+
+{% block leftbar %}
+<h3>Journal annotations:</h3>
+
+  <ul>
+    <li><b>Sites w/ 1+ annotation:</b> {{ annotated_site_ids|length }}</li>
+    <li><b>Notes:</b> {{ journal_notes|length }}</li>
+    <li><b>Author types:</b> {{ journal_author_types|length }}</li>
+    <li><b>Journey phases:</b> {{ journal_journey_phases|length }}</li>
+    <li><b>Patient responsibilities:</b> {{ journal_patient_responsibilities|length }}</li>
+  </ul>
+
+{% endblock %}
+
+{% block content %}
+
+<h2>Annotator: {{username}}</h2>
+
+<p>Summary of existing annotations for user {{username}}.</p>
+
+
+{% if annotator_assignments|length > 0 %}
+
+<h3>Annotation assignments:</h3>
+
+{% for assignment in annotator_assignments %}
+<h4>{{ assignment['name'] }} (size: {{ assignment['sites']|length }} sites)</h4>
+<ul>
+{% for site in assignment['sites'] %}
+  <li><a href="{{ url_for('sites.view_site', site_id=site['site_id']) }}">
+    <b>Site {{ site['site_id'] }}</b>
+    {% if site['is_coded'] is sameas true %}
+      - Coded ({{ site['journey_phase_count'] }} Phases, {{ site['patient_responsibility_count'] }} Responsibilities)
+    {% endif %}
+  </a></li>
+{% endfor %}
+</ul>
+{% endfor %}
+
+<p>End of {{ annotator_assignments|length }} annotation assignments.</p>
+
+{% endif %}
+
+<h3>Journal annotations:</h3>
+
+  <ul>
+    <li><b>Sites w/ 1+ annotation:</b> {{ annotated_site_ids|length }}</li>
+    <li><b>Notes:</b> {{ journal_notes|length }}</li>
+    <li><b>Author types:</b> {{ journal_author_types|length }}</li>
+    <li><b>Journey phases:</b> {{ journal_journey_phases|length }}</li>
+    <li><b>Patient responsibilities:</b> {{ journal_patient_responsibilities|length }}</li>
+  </ul>
+
+<h3>Note annotations:</h3>
+
+<ul>
+{% for note in journal_notes %}
+  <li><a href="{{ url_for('sites.view_site', site_id=note['site_id']) }}#{{note['journal_oid']}}">
+    <b>Site {{ note['site_id'] }}</b> -- {{ note['data'] }}
+  </a></li>
+{% endfor %}
+</ul>
+
+{% endblock %}

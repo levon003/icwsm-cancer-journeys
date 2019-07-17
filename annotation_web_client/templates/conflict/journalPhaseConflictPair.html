@@ -1,0 +1,42 @@
+{% extends 'template.html' %}
+
+{% block title %}Journey Phase Annotation Conflicts - Annotator Pairs {% endblock %}
+
+{% block leftbar %}
+Total conflicts: {{ conflict_list|length }}
+
+{% endblock %}
+
+{% block content %}
+
+<h2>Journey Phase Annotation Conflicts for {{user1}} and {{user2}}</h2>
+
+<p>Summary of conflicts, separated by site.</p>
+
+<!-- A single table holds all of the conflicts, but header rows are interspersed between the sites. -->
+<table style="width:50%">
+{% for group in conflict_list|groupby('site_id') %}
+  <tr><th><a href="{{ url_for('conflict.view_site_journal_phase_conflicts', user1=user1, user2=user2, site_id=group.grouper) }}#phase_conflict_list">Site {{group.grouper}}</a></th></tr>
+  <tr>
+    <th>Link</th>
+    <th>Journal Num</th>
+    <th>Resolved</th>
+    <th>In Common</th>
+    <th>{{user1}} Only</th>
+    <th>{{user2}} Only</th>
+  </tr>
+  {% for conflict in group.list %}
+  <tr>
+  <td><a href="{{ url_for('conflict.view_site_journal_phase_conflicts', user1=user1, user2=user2, site_id=conflict['site_id']) }}#{{conflict['journal_oid']}}">
+    Conflict {{loop.index}}</a></td>
+    <td>{{ conflict['journal_index'] + 1 }}</td>
+    <td><input type="checkbox" onclick="return false;" {{'checked' if conflict['conflict_resolved']}}>{{conflict['correct_username']}}</td>
+    <td>{{conflict['in_common']}}</td>
+    <td>{{conflict['user1_only']}}</td>
+    <td>{{conflict['user2_only']}}</td>
+  </tr>
+{% endfor %}
+{% endfor %}
+</table>
+
+{% endblock %}

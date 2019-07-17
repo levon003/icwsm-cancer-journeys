@@ -1,0 +1,99 @@
+---
+title: "ResponsibilityStickiness"
+author: "levon003"
+date: "April 2, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+require(ggplot2)
+library(foreign)
+library(alr4)
+library(MASS)
+library(msm)
+library(sandwich)
+```
+
+## Ides: Bucket by week, predict the number of counts.
+
+The intuition is that when a responsibility is mentioned by a patient they're likely to discuss the responsibility again soon.  By finding evidence that this is so, we establish additional convergent validity between the responsibility model and our expectations. 
+
+The proposed approach is Poisson regression to estimate the proportion of updates published in a week that are predicted to contain a responsibility. 
+Specifically, for each site, we bucket the site into weeks and include only weeks with at least 2 authored journal updates.  Then, we randomly select one of the updates authored in a week and use it as the seed journal, asking "is the probability of the other updates containing this responsibility higher if the seed update contains the responsibility?".  The only additional confounders we control for is the baseline proportion of posts on this site that contain the responsibility in question and potentially the amount of time elapsed since the start of the site.
+
+Poisson regression model response and variables for responsibility A
+y = # updates with A of non-seed journals
+x1 = does seed update have A
+x2 = proportion of updates on this site containing A, i.e. the baseline occurrence of A on this site (not including this week).
+x3 = week rank  (This would capture longer-term positive or negative trends in the baseline occurrence of A.  Ideally it shouldn't matter if we include this variable, but we may need to include it.)
+offset (exposure) = log(# journals in week - 1)  (The exposure is the number of non-seed journals published on this site during this week.)
+We compute and interpret incidence rates.
+Incidence rate interpretation: The rate ratio comparing seed updates containing A to seed updates not containing A, given the other variables are held constant in the model.  Journals containing A have a rate 1.5 times greater for ratio of journals in the same week that contain A.
+
+
+```{r}
+data <- read.csv("regression_vars.csv", stringsAsFactors=FALSE)
+```
+
+```{r}
+resp_subset <- c('coordinating_support',
+ 'sharing_medical_info',
+ 'compliance',
+ 'financial_management',
+ 'giving_back',
+ 'behavior_changes')
+
+resp_data <- lapply(resp_subset, function(resp_label) subset(data, resp==resp_label))
+```
+
+```{r}
+cs = resp_data[[4]]
+cs$site_proportion_scaled = cs$site_proportion * 100
+m1 <- glm(nonseed_contains_count ~ seed_contains + site_proportion_scaled, family="poisson", offset=log(nonseed_total_count), data=cs)
+summary(m1)
+
+cov.m1 <- vcovHC(m1, type="HC0")
+std.err <- sqrt(diag(cov.m1))
+r.est <- cbind(Estimate= coef(m1), "Robust SE" = std.err,
+"Pr(>|z|)" = 2 * pnorm(abs(coef(m1)/std.err), lower.tail=FALSE),
+LL = coef(m1) - 1.96 * std.err,
+UL = coef(m1) + 1.96 * std.err,
+pm = 1.96 * std.err)
+
+r.est
+
+with(m1, cbind(res.deviance = deviance, df = df.residual, p = pchisq(deviance, df.residual, lower.tail=FALSE)))
+
+s <- deltamethod(list(~ exp(x1), ~ exp(x2), ~ exp(x3)), coef(m1), cov.m1)
+
+## exponentiate old estimates dropping the p values
+rexp.est <- exp(r.est[, -3])
+## replace SEs with estimates for exponentiated coefficients
+rexp.est[, "Robust SE"] <- s
+rexp.est[, "pm"] <- rexp.est[, "Robust SE"] * 1.96
+
+rexp.est
+```
+
+```{r}
+(1.48 + 1.21 + 1.26 + 2.16 + 1.85 + 1.88) / 6
+
+(1.031 + 1.011 + 1.011 + 1.053 + 1.043 + 1.047) / 6
+
+qnorm(0.975)
+
+qnorm(0.995)
+```
+
+
+
+
+
+
+
+
+

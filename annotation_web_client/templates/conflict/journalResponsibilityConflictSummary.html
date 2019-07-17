@@ -1,0 +1,34 @@
+{% extends 'template.html' %}
+
+{% block title %}Patient Responsibility Annotation Conflicts - Summary {% endblock %}
+
+{% block leftbar %}
+<h3>Patient responsibility annotators and number of journals annotated:</h3>
+
+  <ul>
+    {% for user in annotator_list %}
+    <li><b>{{ user['username'] }}:</b> {{ user['responsibility_count'] }}</li>
+    {% endfor %}
+  </ul>
+
+{% endblock %}
+
+{% block content %}
+
+<h2>Pairwise Conflict Comparisons</h2>
+
+<p>Links to pages summarizing the conflicts between each eligible pair of users.</p>
+
+<ul>
+{% for user1 in annotator_list %}
+  {% for user2 in annotator_list %}
+    {% if user1 != user2 %}
+    <li><a href="{{ url_for('conflict.view_journal_responsibility_conflicts', user1=user1['username'], user2=user2['username']) }}">
+      Conflicts for {{user1['username']}} vs {{user2['username']}}
+    </a></li>
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+</ul>
+
+{% endblock %}

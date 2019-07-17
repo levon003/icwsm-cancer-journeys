@@ -1,0 +1,149 @@
+{% extends 'template.html' %}
+
+{% block title %}Responsibility {{ responsibility }} Discussion - Summary {% endblock %}
+
+{% block leftbar %}
+Responsibility: {{responsibility}}<br>
+You are: {{current_user}}<br>
+Other discussant: {{other_user}}
+{% endblock %}
+
+{% block content %}
+
+<p>
+You are: {{current_user}}<br>
+Other discussant: {{other_user}}
+</p>
+
+<h2>Incomplete Discussion Tasks</h2>
+
+<h3>Evidence Tasks ({{incomplete_evidence_tasks|length}} total)</h3>
+{% if incomplete_evidence_tasks|length > 0 %}
+<p>Links to Evidence tasks for responsibility {{responsibility}} that are not yet completed.</p>
+
+<ul>
+{% for task in incomplete_evidence_tasks %}
+    <li><a href="{{ url_for('responsibility_discussion.view_journal_discussion',
+    phase='evidence',
+    evidence_user=task['evidence_username'],
+    reconsider_user=task['reconsider_username'],
+    responsibility=responsibility,
+    discussion_id=task['discussion_id']) }}">
+      Task {{task['discussion_id']}}: Site {{task['site_id']}}
+    </a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No incomplete Evidence tasks for {{responsibility}}!</p>
+{% endif %}
+
+<h3>Reconsider Tasks ({{incomplete_reconsider_tasks|length}} total)</h3>
+{% if incomplete_reconsider_tasks|length > 0 %}
+<p>Links to Reconsider tasks for responsibility {{responsibility}} that are not yet completed.</p>
+
+<ul>
+{% for task in incomplete_reconsider_tasks %}
+        <li><a href="{{ url_for('responsibility_discussion.view_journal_discussion',
+    phase='reconsider',
+    evidence_user=task['evidence_username'],
+    reconsider_user=task['reconsider_username'],
+    responsibility=responsibility,
+    discussion_id=task['discussion_id']) }}">
+      Task {{task['discussion_id']}}: Site {{task['site_id']}}
+    </a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No incomplete Reconsider tasks for {{responsibility}}!</p>
+{% endif %}
+
+<h2>Identify Additional Tasks</h2>
+
+<div>
+    <p>Use these buttons to refresh the list of tasks above.
+        You'll have to do this once initially in order to identify any tasks in the first place.
+    If no tasks appear, then you don't have additional disagreements to discuss for this responsibility!</p>
+
+    {% if incomplete_evidence_tasks|length == 0 %}
+    <button onclick="generate_discussion_batch('evidence', this)">Identify Evidence Tasks</button><br>
+    {% else %}
+    <button onclick="" disabled>Identify Evidence Tasks (Incomplete tasks remain)</button><br>
+    {% endif %}
+    {% if incomplete_reconsider_tasks|length == 0 %}
+    <button onclick="generate_discussion_batch('reconsider', this)">Identify Reconsider Tasks</button>
+    {% else %}
+    <button onclick="" disabled>Identify Reconsider Tasks (Incomplete tasks remain)</button><br>
+    {% endif %}
+</div>
+
+<h2>Complete Discussion Tasks</h2>
+
+<h3>Evidence Tasks ({{complete_evidence_tasks|length}} total)</h3>
+{% if complete_evidence_tasks|length > 0 %}
+<p>Links to Evidence tasks for responsibility {{responsibility}} that were completed in this batch.</p>
+
+<ul>
+{% for task in complete_evidence_tasks %}
+    <li><a href="{{ url_for('responsibility_discussion.view_journal_discussion',
+    phase='evidence',
+    evidence_user=task['evidence_username'],
+    reconsider_user=task['reconsider_username'],
+    responsibility=responsibility,
+    discussion_id=task['discussion_id']) }}">
+      Task {{task['discussion_id']}}: Site {{task['site_id']}}
+    </a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No complete Evidence tasks for {{responsibility}} in this batch!</p>
+{% endif %}
+
+<h3>Reconsider Tasks ({{complete_reconsider_tasks|length}} total)</h3>
+{% if complete_reconsider_tasks|length > 0 %}
+<p>Links to Reconsider tasks for responsibility {{responsibility}} that were completed in this batch.</p>
+
+<ul>
+{% for task in complete_reconsider_tasks %}
+        <li><a href="{{ url_for('responsibility_discussion.view_journal_discussion',
+    phase='reconsider',
+    evidence_user=task['evidence_username'],
+    reconsider_user=task['reconsider_username'],
+    responsibility=responsibility,
+    discussion_id=task['discussion_id']) }}">
+      Task {{task['discussion_id']}}: Site {{task['site_id']}}
+    </a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No complete Reconsider tasks for {{responsibility}} in this batch!</p>
+{% endif %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+function generate_discussion_batch(phase, button) {
+    console.log('Button clicked to generate new batch for phase:', phase);
+    button.disabled = true; // Disable the button while we process the post
+    button.innerHTML = "Processing request...";
+
+    $.post("{{ url_for('responsibility_discussion.handle_generate_batch') }}",
+    {
+        responsibility: "{{responsibility}}",
+        phase: phase,
+        current_username: "{{current_user}}",
+        other_username: "{{other_user}}",
+    },
+    function(response) {
+        console.log('Generate batch POST returned: ', response);
+        if (response !== "OK") {
+            alert("Bad response '" + response + "'; reload the page and try again (and tell levon003).");
+        } else {
+            // Successfully generated a new batch!
+            // We force the page to reload, since this will result in fetching the newly-generated batches.
+            location.reload(true);
+        }
+    },
+    "text");
+}
+</script>
+
+{% endblock %}
