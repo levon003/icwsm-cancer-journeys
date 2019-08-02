@@ -9,6 +9,8 @@ As described in the paper, CaringBridge data used for analysis is not being rele
 
 For any questions or additional information, contact the corresponding author: levon003@umn.edu
 
+Preprint: https://z.umn.edu/levonianIcwsm2020Preprint
+
 Author website: https://z.umn.edu/zlevonian
 
 ### Annotation codebook
